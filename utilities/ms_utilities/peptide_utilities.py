@@ -1,7 +1,9 @@
-class PeptideUtilities:
-    def __init__(self):
-        pass 
+'''
+@ Created by Luminita Moruz 
+March 7th, 2013
+'''
 
+class PeptideUtilities:
     @staticmethod
     def compute_monoisotopic_mass_without_charge(peptide_sequence):
         '''
