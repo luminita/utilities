@@ -16,7 +16,8 @@ class MS1Feature:
                 "last_rt", "best_rt", "best_correl", "modifications"] 
         field_types = [str, int, int, int, int, float, float, float, \
                 float, float, float, float, float, str]
-        for fname, ftype in zip(field_names, field_types):
+        indices = range(len(field_types))
+        for fname, ftype, i in zip(field_names, field_types, indices):
             self.__dict__[fname] = ftype(fields[i])
         if len(fields) == 17:
             self.fwhm = float(fields[14])
@@ -28,7 +29,8 @@ class MS1Feature:
             self.r2 = None
 
     def __str__(self):
-        to_str = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".\
+        to_format = "{}\t"*13
+        to_str = to_format.\
                 format(self.first_scan, self.last_scan, self.num_scans, \
                 self.charge, self.monoisotopic_mass, self.base_isotope_peak, \
                 self.best_intensity, self.summed_intensity, self.first_rt, \
