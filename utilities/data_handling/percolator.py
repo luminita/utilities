@@ -41,9 +41,10 @@ class PercolatorProtein:
         self.is_decoy = bool(is_decoy)
         
     def __str__(self):
-        to_str = "{}\t{}\t{}".format(self.perc_id, self.pep)
+        to_str = "{}\t{}\t{}".format(self.perc_id, self.qvalue, self.pep)
+        to_str += "\n-------\n"
         for peptide in self.peptides:
-            to_str += "\t{}".format(peptide)
+            to_str += "\t{}\n".format(peptide)
         return to_str
 
         
@@ -62,40 +63,32 @@ class PercolatorIO:
             print "Loading {}".format(filename)
         lines = open(filename).readlines()[1:]
         peptides = []
-        proteins = {}
         i = 0
         while i<len(lines) and not lines[i].startswith("ProteinId"):
             columns = lines[i].split("\t")
             protein_ids = [col.strip() for col in columns[5:]]
-            if dot_notation:
+            if dot_notation or columns[4].find(".") == -1:
                 seq = columns[4]
-            elif columns[4].find(".") != -1:
+            else:
                 seq = columns[4].split(".")[1]
             peptide = PercolatorPeptide(columns[0], columns[1], \
                     columns[2], columns[3], seq, protein_ids, \
                     False)
             peptides.append(peptide)
-            for prot in protein_ids:
-                if prot in proteins:
-                    proteins[prot].peptides.append(peptide) 
-                else:
-                    proteins[prot] = PercolatorProtein(prot, -1.0, -1.0, \
-                            [peptide], False)
             i += 1
-        # load the proteins 
+        i += 1
+        # load the proteins         
+        proteins = []
         while i<len(lines):
             columns = lines[i].split()
-            if columns[0] not in proteins and verbosity > 1:
-                print "Warning: protein {} has no peptides identified;" + \
-                        "it will be skipped".format(col[0])
-            else:
-                proteins[columns[0]].qvalue = columns[1]
-                proteins[columns[0]].pep = columns[2]
+            peps = [c.strip() for c in columns[3:]]
+            proteins.append(PercolatorProtein(columns[0], columns[1], \
+                    columns[2], peps, False))
             i += 1
         if verbosity > 2:
             print "{} peptides, {} proteins loaded".format(len(peptides), \
                     len(proteins))
-        return peptides, proteins.values()
+        return peptides, proteins
         
                 
             

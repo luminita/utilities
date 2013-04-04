@@ -2,29 +2,37 @@
 @ Created by Luminita Moruz 
 March 7th, 2013
 '''
+from constants import MONOISOTOPIC_MASSES, MONOISOTOPIC_MASS_WATER, MASS_PROTON, MASS_CO, MASS_AMMONIA
+
 
 class PeptideUtilities:
     @staticmethod
-    def compute_monoisotopic_mass_without_charge(peptide_sequence):
+    def get_sequence(peptide_sequence):
+        if peptide_sequence.find(".") != -1:
+            return peptide_sequence.split(".")[1]            
+        return peptide_sequence
+        
+        
+    @staticmethod
+    def compute_monoisotopic_mass_without_charge(peptide_sequence, ptm_masses={}):
         '''
         Compute the monoisotopic mass M of a peptide without charge 
+        A dictionary with ptm_masses should be given 
+        Example: {"K[UNIMOD:259]":8.014199+128.0949557, 
+                  "R[UNIMOD:267]":10.008269+156.1011021}
         '''
-        monoisotopic_masses = [71.0371103, 0.0, 160.0306443, 115.0269385, \
-                129.0425877, 147.0684087, 57.0214611, 137.0589059, \
-                113.0840579, 0.0, 128.0949557, 113.0840579, 131.0404787, \
-                114.0429222, 0.0, 97.0527595, 128.0585714, 156.1011021, \
-                87.0320244, 101.0476736, 0.0, 99.0684087, 186.0793065, \
-                0.0, 163.0633228, 0.0]
-        monoisotopic_mass_water = 18.0105633 
-        # check if the peptide is given in the format X.Y.Z
-        peptide = peptide_sequence
-        if peptide_sequence.find(".") != -1:
-            peptide = peptide_sequence.split(".")[1]            
+        peptide = PeptideUtilities.get_sequence(peptide_sequence)
         # compute the mass 
         mm = 0.0
+        modifs = ptm_masses.keys()
+        for mod in modifs:
+            while peptide.find(mod) != -1:
+                mm += ptm_masses[mod]
+                peptide = peptide.replace(mod, "", 1) 
         for i in range(len(peptide)):
-            mm += monoisotopic_masses[ord(peptide[i]) - ord('A')]
-        return (mm + monoisotopic_mass_water)
+            mm += MONOISOTOPIC_MASSES[ord(peptide[i]) - ord('A')]
+        return (mm + MONOISOTOPIC_MASS_WATER)
+
 
     @staticmethod    
     def compute_monoisotopic_mass_with_charge(peptide_sequence):
@@ -32,9 +40,65 @@ class PeptideUtilities:
         Compute the monoisotopic mass of a peptide including the
         charge (one proton)
         '''
-        mass_proton = 1.00727646677
         mm = PeptideUtilities.compute_monoisotopic_mass_without_charge(\
                 peptide_sequence) 
-        return (mm + mass_proton)
+        return (mm + MASS_PROTON)
+        
+    
+    @staticmethod    
+    def get_b_y_ions(peptide_sequence):
+        '''
+        Given a peptide sequence, get the list of b and y ions singly charged 
+        Note that the results is [b1, .., bn-1], [yn-1, .., y1]        
+        '''
+        peptide = PeptideUtilities.get_sequence(peptide_sequence)
+        b = []
+        total_mass = 0.0
+        n = len(peptide)
+        for i in range(n):
+            total_mass += MONOISOTOPIC_MASSES[ord(peptide[i])-ord('A')]
+            b.append(total_mass + MASS_PROTON)  
+        # 2*MASS_PROTON is used to calculate y ions properly
+        total_mass += MONOISOTOPIC_MASS_WATER + 2*MASS_PROTON                
+        y = [total_mass-MASS_PROTON] + [total_mass-bi for bi in b[:-1]] 
+        return b, y
+        
+    
+    @staticmethod    
+    def get_all_ions(peptide_sequence):
+        '''
+        Given a sequence, return:
+        - [b1, .., bn-1] singly charged
+        - [yn-1, ..., y1] singly charged
+        - [yn-1, ..., y1] doubly charged
+        - [a1, .., an-1] ions 
+        '''
+        b, y = PeptideUtilities.get_b_y_ions(peptide_sequence)
+        a, b0, b_star = zip(*[(bi-MASS_CO, bi-MONOISOTOPIC_MASS_WATER, \
+                bi-MASS_AMMONIA) for bi in b])
+        y_doubly_charged, y0, y_star = zip(*[((yi+MASS_PROTON)/2, \
+                yi-MONOISOTOPIC_MASS_WATER, yi-MASS_AMMONIA) for yi in y])
+        return b, y, a, b0, b_star, y_doubly_charged, y0, y_star
+        
+        
+def main():            
+    #b, y = PeptideUtilities.get_b_y_ions("LIEDNEYTAR")
+    b, y, a, b0, b_star, y_doubly_charged, y0, y_star = PeptideUtilities.get_all_ions("LIEAR")
+    for (s, n) in zip([b, y, a, b0, b_star, y_doubly_charged, y0, y_star], \
+            ['b','y','a','b0','b*','y++','y0','y*']):
+        print "\n", n, ": ", s, "\n"
+    
 
-
+if __name__ == '__main__':
+    main()
+            
+            
+            
+            
+            
+            
+            
+            
+            
+        
+        

@@ -1,5 +1,6 @@
 import sys 
 import data_handling.kronik as kronik 
+import data_handling.other as other
 import data_handling.percolator as percolator 
 import data_handling.elude as elude
 import data_structures.interval_tree as interval_tree
@@ -45,13 +46,14 @@ def remove_duplicates(list_):
   
           
 def get_matched_peptides(percolator_peptides, rt_dict, mass_tolerance, \
-        verbosity):
+        ptm_masses, verbosity):
     peptides = []
     for p in percolator_peptides:
         if p.sequence in rt_dict:
             rt = rt_dict[p.sequence]         
             theoretical_mass = peptide_utilities.PeptideUtilities().\
-                    compute_monoisotopic_mass_without_charge(p.sequence)
+                    compute_monoisotopic_mass_without_charge(p.sequence, \
+                    ptm_masses)
             offset = mass_tolerance*theoretical_mass*1e-6
             mass_interval = (theoretical_mass-offset, theoretical_mass+offset)
             peptides.append(PercolatorMatchedPeptide(p.perc_id, p.svm_score, \
@@ -60,20 +62,20 @@ def get_matched_peptides(percolator_peptides, rt_dict, mass_tolerance, \
         elif verbosity > 1:
             print "Warning: No retention time for {}".format(p.sequence)
     return peptides 
-
+    
           
 def match_peptides2features(percolator_tab_file, rt_file, kronik_file, \
-        mass_tolerance=5, rt_tolerance=0.25, verbosity=2):
-    '''
-    Given:
-    - a percolator tab file 
-    - a file including peptide sequence, retention time 
-    - a kronik file 
-    - mass tolerance in ppm 
-    - retention time tolerance in min
-    match the peptides to the MS1 features, and return a list of 
-    PercolatorMatchedPeptides 
-    '''
+        ptm_file=None, check_charge=True, mass_tolerance=5, \
+        rt_tolerance=0.25, verbosity=2):            
+    if check_charge:
+        are_matching = lambda p, feat: \
+                    p.retention_time >= feat.first_rt-rt_tolerance and \
+                    p.retention_time <= feat.last_rt+rt_tolerance and \
+                    feat.charge == int(p.perc_id.split("_")[-2])
+    else:
+        are_matching = lambda p, feat: \
+                    p.retention_time >= feat.first_rt-rt_tolerance and \
+                    p.retention_time <= feat.last_rt+rt_tolerance 
     # load data 
     percolator_peptides, percolator_proteins = percolator.PercolatorIO().\
             load_tab(percolator_tab_file, dot_notation=False, \
@@ -81,9 +83,11 @@ def match_peptides2features(percolator_tab_file, rt_file, kronik_file, \
     rt_dict = elude.EludeIO().load_rt_file(rt_file, verbosity=verbosity)        
     ms1_features = kronik.KronikIO().load_kronik_file(kronik_file, \
             verbosity=verbosity)
+    ptms = other.load_ptm_file(ptm_file, verbosity=verbosity)
+    
     # fill intervals and rts 
     peptides = get_matched_peptides(percolator_peptides, rt_dict, \
-            mass_tolerance, verbosity=verbosity) 
+            mass_tolerance, ptms, verbosity=verbosity) 
     # build the interval tree (mass intervals)
     if verbosity > 2:
         print "\nBuilding interval tree ..."
@@ -97,14 +101,13 @@ def match_peptides2features(percolator_tab_file, rt_file, kronik_file, \
         matching_mass = T.search(feat.monoisotopic_mass)
         if len(matching_mass) > 0:
             umatching_mass = remove_duplicates(matching_mass)
-            matching_mass_rt = filter(lambda p: \
-                    p.retention_time >= feat.first_rt-rt_tolerance and \
-                    p.retention_time <= feat.last_rt+rt_tolerance and 
-                    feat.charge == int(p.perc_id.split("_")[-2]), \
-                    umatching_mass)
+            matching_mass_rt = [p for p in umatching_mass if \
+                    are_matching(p, feat)]            
             for peptide in matching_mass_rt:
                 peptide.matched_features.append(feat)                     
     print "Done."   
+    if verbosity > 2:
+        print_summary(peptides)    
     return peptides    
     
     
@@ -148,7 +151,7 @@ def load_peptides_matched(filename, verbosity=2):
         peptides.append(PercolatorMatchedPeptide(perc_cols[0], perc_cols[1], \
                 perc_cols[2], perc_cols[3], perc_cols[4], proteins, \
                 False, retention_time, theoretical_mass, matched_features, \
-                mass_interval))
+                mass_interval)) 
     if verbosity > 2:
         print "{} peptides were loaded".format(len(peptides))    
     return peptides
@@ -165,18 +168,18 @@ def print_summary(peptides):
             n_unique_matched, n_unique_matched/float(n_total)*100, \
             n_multiply_matched, n_multiply_matched/float(n_total)*100)
     print "--------------------------"    
-    
+
     
 def main():
-    tab_file = "data/103111-Yeast-2hr-01.percolator_q0.01.tab"
-    rt_file = "data/103111-Yeast-2hr-01_q0.01.rt.txt"
-    kronik_file = "data/103111-Yeast-2hr-01.kronik"
+    rt_file="data/20110429_Velos4_MaZe_SA_HeLaH-PrESTsL4-q0.01-rt.txt"
+    tab_file="data/20110429_Velos4_MaZe_SA_HeLaH-PrESTsL4.percolator-q0.01.tab"
+    kronik_file="data/20110429_Velos4_MaZe_SA_HeLaH-PrESTsL4.kronik"
+    ptm_file = "data/ptms.txt"
     
     peptides = match_peptides2features(tab_file, rt_file, kronik_file, \
-            mass_tolerance=10, rt_tolerance=0.25, verbosity=3)
+            ptm_file, mass_tolerance=5, rt_tolerance=0.1, verbosity=3)
     print_summary(peptides)
-    write_to_file(peptides, "tmp/out.txt", verbosity=2)
-    
+    write_to_file(peptides, "tmp/out.txt", verbosity=2)    
     my_peptides = load_peptides_matched("tmp/out.txt", verbosity=3)
     print_summary(my_peptides)
     write_to_file(my_peptides, "tmp/out2.txt", verbosity=2)
