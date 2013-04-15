@@ -58,6 +58,30 @@ def plot_boxplot(matrix, xticks, labelx, labely, xticks_rotation=45, \
     pyplot.close()
 
 
+def plot_histogram(data, labelx, labely, nbins = 100, color = 'blue', \
+        xlimits=None, ylimits=None, title=None, dpi=100, filename=None):
+    pyplot.hist(data, nbins, color=color)            
+    pyplot.xlabel(labelx, fontsize = 20)
+    pyplot.ylabel(labely, fontsize = 20)
+    if ylimits != None:
+        pyplot.ylim(ylimits)
+    if xlimits != None:
+        pyplot.xlim(xlimits)
+    if title != None:
+        pyplot.title(title)
+    if (filename != None):
+        pyplot.savefig(filename + '.png', format='png', dpi=dpi)
+    else:
+        pyplot.show()
+    pyplot.cla()
+    pyplot.close()
+    
+    
+def plot_multiple_histogram(data_matrix, labelx, labely, data_labels, \
+        bins, xlimits=none, ylimits=None, colors=None, alpha=None, \
+        dpi=100, filename=None):
+    pass 
+
   
 def main():
     # Multiple scatter plots 

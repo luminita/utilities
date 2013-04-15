@@ -144,8 +144,8 @@ def load_peptides_matched(filename, verbosity=2):
         retention_time = columns[2]
         mass_interval = get_pair(columns[3])
         if len(columns) > 3:
-            matched_features = [kronik.MS1Feature(["-"]+l.strip().split("\t")) \
-                    for l in columns[4:]]        
+            matched_features = [kronik.MS1Feature(["-"]+ll.strip().split("\t")) \
+                    for ll in columns[4:]]        
         else:
             matched_features = []
         peptides.append(PercolatorMatchedPeptide(perc_cols[0], perc_cols[1], \

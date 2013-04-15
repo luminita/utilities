@@ -74,19 +74,24 @@ class PeptideUtilities:
         - [a1, .., an-1] ions 
         '''
         b, y = PeptideUtilities.get_b_y_ions(peptide_sequence)
-        a, b0, b_star = zip(*[(bi-MASS_CO, bi-MONOISOTOPIC_MASS_WATER, \
-                bi-MASS_AMMONIA) for bi in b])
+        a, b0, b_star, b_doubly_charged = zip(*[(bi-MASS_CO, bi-MONOISOTOPIC_MASS_WATER, \
+                bi-MASS_AMMONIA, (bi+MASS_PROTON)/2) for bi in b])
         y_doubly_charged, y0, y_star = zip(*[((yi+MASS_PROTON)/2, \
                 yi-MONOISOTOPIC_MASS_WATER, yi-MASS_AMMONIA) for yi in y])
-        return b, y, a, b0, b_star, y_doubly_charged, y0, y_star
+        return b, y, a, b0, b_star, b_doubly_charged, y_doubly_charged, y0, y_star
         
         
 def main():            
     #b, y = PeptideUtilities.get_b_y_ions("LIEDNEYTAR")
-    b, y, a, b0, b_star, y_doubly_charged, y0, y_star = PeptideUtilities.get_all_ions("LIEAR")
-    for (s, n) in zip([b, y, a, b0, b_star, y_doubly_charged, y0, y_star], \
-            ['b','y','a','b0','b*','y++','y0','y*']):
-        print "\n", n, ": ", s, "\n"
+    b, y, a, b0, b_star, y_doubly_charged, y0, y_star = PeptideUtilities.get_all_ions("TFTGCWTCR")
+    #for (s, n) in zip([b, y, a, b0, b_star, y_doubly_charged, y0, y_star], \
+    #        ['b','y','a','b0','b*','y++','y0','y*']):
+    #    print "\n", n, ": ", s, "\n"
+    x = b + y + list(a) + list(b0) +list(b_star) + list(y_doubly_charged) + list(y0) + list(y_star) 
+    x.sort()
+    for z in x:
+        print z
+    
     
 
 if __name__ == '__main__':
