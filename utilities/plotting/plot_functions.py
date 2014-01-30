@@ -7,7 +7,7 @@ import matplotlib.pyplot as pyplot
 
 def plot_scatterplot_series(data_x, data_y, labels, colors_markers=None, \
         markersize=5.0, xlabel='', ylabel='', legend_location='lower right', \
-        xlim=None, ylim=None, out_file=None, format_file='png'):
+        xlim=None, ylim=None, out_file=None, xticks=None, format_file='png'):
     i = 0
     while i < len(data_x):
         if colors_markers != None:
@@ -19,6 +19,8 @@ def plot_scatterplot_series(data_x, data_y, labels, colors_markers=None, \
         i += 1
     pyplot.xlabel(xlabel, fontsize=20)                
     pyplot.ylabel(ylabel, fontsize=20)                
+    if xticks != None:
+        pyplot.xticks(xticks[0], xticks[1])
     if legend_location != None:
         pyplot.legend(loc=legend_location)
     if xlim != None:
@@ -78,10 +80,34 @@ def plot_histogram(data, labelx, labely, nbins = 100, color = 'blue', \
     
     
 def plot_multiple_histogram(data_matrix, labelx, labely, data_labels, \
-        bins, xlimits=none, ylimits=None, colors=None, alpha=None, \
-        dpi=100, filename=None):
-    pass 
-
+        bins, alphas, xlimits=None, ylimits=None, colors=None, \
+        dpi=100, title=None, normed=False, filename=None):
+    i = 0
+    while i<len(data_matrix):
+        if colors != None:
+            pyplot.hist(data_matrix[i], bins, color=colors[i], \
+                    label=data_labels[i], alpha=alphas[i], normed=normed)
+        else:
+            pyplot.hist(data_matrix[i], bins, color=colors[i], \
+                    label=data_labels[i], alpha=alphas[i], normed=normed)
+        i += 1
+    pyplot.xlabel(labelx, fontsize = 20)
+    pyplot.ylabel(labely, fontsize = 20)
+    if ylimits != None:
+        pyplot.ylim(ylimits)
+    if xlimits != None:
+        pyplot.xlim(xlimits)
+    if title != None:
+        pyplot.title(title)
+    pyplot.legend()    
+    if (filename != None):
+        pyplot.savefig(filename + '.png', format='png', dpi=dpi)
+    else:
+        pyplot.show()
+    pyplot.cla()
+    pyplot.close()
+        
+        
   
 def main():
     # Multiple scatter plots 

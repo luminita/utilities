@@ -1,5 +1,10 @@
 """ Given a file including 
 Protein	PEP	q-value
+
+or 
+
+Fido-probability	Protein
+
 plot the estimated vs empirical qvalue. The file is assumed to have the first line as 
 header. 
 
@@ -27,18 +32,6 @@ class Protein:
     def __repr__(self):
         return "{} {} ".format(self.name, self.pep)
    
-"""
-def load_protein_probabilities(protein_file):
-    #Load the protein probabilities from the input file
-    #return a list of pairs (PEP, protein_name)
-    print "\nLoading {}".format(protein_file)
-    proteins = []
-    for l in open(protein_file).readlines()[1:]:
-        fields = l.split()
-        proteins.append(Protein(fields[1].strip(), 1-float(fields[0])))
-    print "{} proteins were loaded. ".format(len(proteins))
-    return proteins
-"""    
 
 def load_protein_probabilities(protein_file):
     #Load the protein probabilities from the input file
@@ -47,14 +40,19 @@ def load_protein_probabilities(protein_file):
     proteins = []
     for l in open(protein_file).readlines()[1:]:
         fields = l.split()
-        proteins.append(Protein(fields[0].strip(), float(fields[1])))
+        if len(fields) > 2:
+            proteins.append(Protein(fields[0].strip(), float(fields[1])))
+        else:
+            proteins.append(Protein(fields[1].strip(), 1.0-float(fields[0])))
     print "{} proteins were loaded. ".format(len(proteins))
     return proteins
     
+    
 def compute_empirical_qval(proteins):
-    """ Given a list of Protein objects, compute their empirical qvalue """
-    print "\nComputing empirical q-values ..."
     proteins.sort(key = operator.attrgetter('pep'))
+    
+    for x in proteins:
+        print x
     idx_target = 0.0
     idx_decoy = 0.0
     for prot in proteins:
@@ -62,13 +60,10 @@ def compute_empirical_qval(proteins):
             idx_decoy += 1.0
         else:
             idx_target += 1.0
-            prot.emp_q = idx_decoy / idx_target            
-    print "Done."
-                
-    
+            prot.emp_q = idx_decoy / idx_target      
+            
+                    
 def compute_estimated_qval(proteins):
-    """ Given a list of Protein objects, compute their estimated qvalue (avg PEP) """
-    print "\nComputing empirical q-values ..."
     proteins.sort(key = operator.attrgetter('pep'))
     sum_pep = 0.0
     i = 0
@@ -77,21 +72,23 @@ def compute_estimated_qval(proteins):
             sum_pep += prot.pep
             i += 1
             prot.est_q = sum_pep / i
-    print "Done."
+       
 
 def plot_qvalues(proteins, out_file):
     """ plot empirical vs estimated qvalues """    
     plt.plot([p.emp_q for p in proteins if not p.is_decoy], \
              [p.est_q for p in proteins if not p.is_decoy], "ro", \
-             markeredgewidth = 0.0, markeredgecolor ="red", markersize = 2.0 )
-    plt.plot([0, 1], [0, 1])
-    #plt.xscale('log')
-    #plt.yscale('log')
-    plt.xlim([10e-4, 1])
-    plt.ylim([10e-4, 1])
+             markeredgewidth = 0.0, markeredgecolor ="red", markersize = 3.0 )
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.plot([1e-3, 1], [1e-3, 1], "k-")    
+    plt.plot([1e-3, 1], [2e-3, 2], "k--")    
+    plt.plot([1e-3, 1], [0.5e-3, 0.5], "k--")            
+    plt.xlim([1e-3, 1])
+    plt.ylim([1e-3, 1])
     plt.ylabel("Estimated q value", fontsize = 20)
     plt.xlabel("Empirical q value", fontsize = 20)
-    plt.savefig(out_file + ".pdf", format = "pdf")
+    plt.savefig(out_file + ".png", format = "png")
     
 
 def main():

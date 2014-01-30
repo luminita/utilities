@@ -44,6 +44,15 @@ class PeptideUtilities:
                 peptide_sequence) 
         return (mm + MASS_PROTON)
         
+    @staticmethod    
+    def compute_mz(peptide_sequence, z):
+        '''
+        Compute the m/z of a peptide
+        '''
+        mm = PeptideUtilities.compute_monoisotopic_mass_without_charge(\
+                peptide_sequence) 
+        return (mm + z*MASS_PROTON) / z
+    
     
     @staticmethod    
     def get_b_y_ions(peptide_sequence):

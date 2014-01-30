@@ -47,3 +47,21 @@ def load_fasta_file(filename, full_name=False, verbosity=2):
       
     return proteins
     
+
+
+def write_list_to_file(my_list, out_file, verbosity=2):
+    '''
+    Write a list of objects to out_file 
+    '''
+    if verbosity > 2:
+        print "\nWriting to {}".format(out_file)        
+	
+    outf = open(out_file, "w")
+    for l in my_list:
+        outf.write("{}\n".format(l))
+    outf.close()
+	
+    if verbosity > 2:
+        print "{} lines were written".format(len(my_list))    
+    
+	

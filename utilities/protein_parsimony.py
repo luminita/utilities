@@ -16,13 +16,15 @@ def get_dict(peptides, qval_threshold):
     protein_dict = {}
     for p in peptides:
         if p.is_decoy==False and p.qvalue<qval_threshold:
-            target_proteins = [prot for prot in p.proteins if prot.find("random") == -1]
+            target_proteins = [prot for prot in p.proteins if prot.find("random") == -1]        
             peptide_dict[p.sequence] = target_proteins
             for prot in target_proteins:
                 if prot in protein_dict:
                     protein_dict[prot] = protein_dict[prot].union(set([p.sequence]))
                 else:
                     protein_dict[prot] = set([p.sequence])
+            
+    
     return peptide_dict, protein_dict
             
 

@@ -60,7 +60,8 @@ def get_matched_peptides(percolator_peptides, rt_dict, mass_tolerance, \
                     p.qvalue, p.pep, p.sequence, p.proteins, p.is_decoy, \
                     rt, theoretical_mass, [], mass_interval))
         elif verbosity > 1:
-            print "Warning: No retention time for {}".format(p.sequence)
+            #print "Warning: No retention time for {}".format(p.sequence)
+            pass
     return peptides 
     
           
